@@ -18,22 +18,8 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'rspec'
   s.add_development_dependency 'timecop'
 
-  s.files = [
-   "Gemfile",
-   "LICENSE",
-   "README.md",
-   "Rakefile",
-   "attr_cached.gemspec",
-   "lib/attr_cached.rb",
-   "lib/attr_cached/version.rb",
-   "spec/attr_cached_spec.rb",
-   "spec/helpers/cache_provider.rb",
-   "spec/models/device.rb",
-   "spec/models/user.rb",
-   "spec/schema.rb",
-   "spec/spec_helper.rb"
-  ]
-
-  s.files        = `git ls-files`.split('\n')
-  s.require_path = 'lib'
+  s.files         = `git ls-files`.split($/)
+  s.executables   = s.files.grep(%r{^bin/}).map{ |f| File.basename(f) }
+  s.test_files    = s.files.grep(%r{^(test|spec|features)/})
+  s.require_path = ['lib']
 end
