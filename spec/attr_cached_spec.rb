@@ -3,10 +3,10 @@ require 'spec_helper'
 describe 'attr_cached' do
   let(:device) { Device.create! }
   let(:user) { User.create! }
-  let(:provider) { Device.cache_provider }
+  let(:provider) { Device.attr_cached_provider }
 
   it 'init device with empty cache' do
-    expect(device.new_record?).to be(false)
+    expect(device.new_record?).to eq(false)
   end
 
   it 'user last_activity time always with current time' do
@@ -36,6 +36,47 @@ describe 'attr_cached' do
     expect(cache_data).to match({ lat: lat, lon: lon, last_activity: time })
   end
 
+  it 'write all data into cache' do
+    # Now time
+    time = Time.now
+    lat  = 10.302
+    lon  = 10.305
+
+    # Write data
+    device.lat = lat
+    device.lon = lon
+    device.last_activity = time
+    device.save!
+
+    # Clear cache
+    provider.clear!
+    expect(provider.read([device, :attr_cache_store])).to eq(nil)
+
+    # Load device
+    d = Device.find device.id
+    expect(d.lat).to eq(lat)
+
+    # Set just one value
+    d.lat = 5.302
+
+    # Compare cache values
+    d.save!
+
+    # Full cached data!
+    expect(d.last_activity.utc.to_i).to eq(time.utc.to_i)
+
+    # Compare cash hash data
+    provider_hash = provider.read([device, :attr_cache_store])
+    expect(provider_hash[:lat]).to eq(5.302)
+    expect(provider_hash[:lon]).to eq(10.305)
+    expect(provider_hash[:last_activity].utc.to_i).to eq(time.utc.to_i)
+
+    # Load device again
+    d = Device.find device.id
+    expect(d.lat).to eq(5.302)
+    expect(d.lon).to eq(10.305)
+  end
+
   it 'set data twice and compare updated_at and new values' do
     d = device
 
@@ -49,6 +90,7 @@ describe 'attr_cached' do
     d.last_activity = time
     d.save!
 
+    # Get last update
     last_update = d.updated_at
 
     # Now reload data and set different data!
@@ -58,14 +100,55 @@ describe 'attr_cached' do
     d.last_activity = time + 3.seconds
     d.save! # This call will not touch the database
 
+    # But check if arround callback set data back!
+    expect(d.lat).to eq(lat + 1)
+    expect(d.lon).to eq(lon + 1)
+
     # Compare updated at!
     d = Device.find(d.id)
     expect(d.updated_at.utc.to_i).to eq(last_update.utc.to_i)
 
-    # But data will be new!
+    # TODO: Remove in some future test (get difference in dates between db and code)
+    data = ActiveRecord::Base.connection.execute("SELECT updated_at FROM devices WHERE id = #{d.id}").first
+    difference = (Time.parse(data['updated_at']).utc.to_i - last_update.utc.to_i)
+
+    # Test if DB contains old data!
+    data = ActiveRecord::Base.connection.execute("SELECT lat, lon, last_activity FROM devices WHERE id = #{d.id}").first
+    expect(data['lat']).to eq(lat)
+    expect(data['lon']).to eq(lon)
+    expect((Time.parse(data['last_activity']) - difference).utc.to_s(:db)).to eq(time.utc.to_s(:db))
+    expect(d.last_activity.utc.to_i).to eq((time + 3.seconds).utc.to_i)
+
+    # But data will be the new ones!
     expect(d.lat).to eq(lat + 1)
     expect(d.lon).to eq(lon + 1)
     expect(d.last_activity.utc.to_i).to eq((time + 3.seconds).utc.to_i)
+  end
+
+  it 'test cache force store' do
+    d = device
+
+    # Write data
+    time = Time.now
+    lat  = 10.302
+    lon  = 10.305
+
+    d.lat = lat
+    d.lon = lon
+    d.last_activity = time
+    d.save!
+
+    # Modify lat / lon and force save!
+    d.lat = lat + 1
+    d.lon = lon + 1
+    d.last_activity = time + 3.seconds
+    d.cache_force_save = true
+    d.save!
+
+    # Check DB data
+    data = ActiveRecord::Base.connection.execute("SELECT lat, lon, last_activity FROM devices WHERE id = #{d.id}").first
+    expect(data['lat']).to eq(lat + 1)
+    expect(data['lon']).to eq(lon + 1)
   end
 
   it 'save data on next update after more than 5.minutes' do
