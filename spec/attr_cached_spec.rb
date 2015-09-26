@@ -4,6 +4,7 @@ describe 'attr_cached' do
   let(:device) { Device.create! }
   let(:user) { User.create! }
   let(:provider) { Device.attr_cached_provider }
+  let(:datetime_caster) { ActiveRecord::Type::DateTime.new }
 
   it 'init device with empty cache' do
     expect(device.new_record?).to eq(false)
@@ -110,13 +111,15 @@ describe 'attr_cached' do
 
     # TODO: Remove in some future test (get difference in dates between db and code)
     data = ActiveRecord::Base.connection.execute("SELECT updated_at FROM devices WHERE id = #{d.id}").first
-    difference = (Time.parse(data['updated_at']).utc.to_i - last_update.utc.to_i)
+    casted_updated_at = datetime_caster.type_cast_from_database(data["updated_at"])
+    difference = (casted_updated_at.utc.to_i - last_update.utc.to_i)
 
     # Test if DB contains old data!
     data = ActiveRecord::Base.connection.execute("SELECT lat, lon, last_activity FROM devices WHERE id = #{d.id}").first
+    casted_last_activity = datetime_caster.type_cast_from_database(data["last_activity"])
     expect(data['lat']).to eq(lat)
     expect(data['lon']).to eq(lon)
-    expect((Time.parse(data['last_activity']) - difference).utc.to_s(:db)).to eq(time.utc.to_s(:db))
+    expect((casted_last_activity - difference).utc.to_s(:db)).to eq(time.utc.to_s(:db))
     expect(d.last_activity.utc.to_i).to eq((time + 3.seconds).utc.to_i)
 
     # But data will be the new ones!
