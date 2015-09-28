@@ -108,16 +108,11 @@ describe 'attr_cached' do
     d = Device.find(d.id)
     expect(d.updated_at.utc.to_i).to eq(last_update.utc.to_i)
 
-    # TODO: Remove in some future test (get difference in dates between db and code)
-    data = ActiveRecord::Base.connection.execute("SELECT updated_at FROM devices WHERE id = #{d.id}").first
-    difference = (Time.parse(data['updated_at']).utc.to_i - last_update.utc.to_i)
-
     # Test if DB contains old data!
-    data = ActiveRecord::Base.connection.execute("SELECT lat, lon, last_activity FROM devices WHERE id = #{d.id}").first
-    expect(data['lat']).to eq(lat)
-    expect(data['lon']).to eq(lon)
-    expect((Time.parse(data['last_activity']) - difference).utc.to_s(:db)).to eq(time.utc.to_s(:db))
-    expect(d.last_activity.utc.to_i).to eq((time + 3.seconds).utc.to_i)
+    raw_device = DeviceWithoutCache.find(d.id)
+    expect(raw_device.lat).to eq(lat)
+    expect(raw_device.lon).to eq(lon)
+    expect(raw_device.last_activity.utc.to_i).to eq(time.utc.to_i)
 
     # But data will be the new ones!
     expect(d.lat).to eq(lat + 1)

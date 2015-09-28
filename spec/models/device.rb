@@ -7,4 +7,3 @@ class Device < ActiveRecord::Base
     attr_accessible :lat, :lon, :last_activity, :key, :name
   end
 end
-
