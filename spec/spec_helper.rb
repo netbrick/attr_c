@@ -14,7 +14,7 @@ require 'helpers/cache_provider'
 
 # Require model
 require 'models/device'
-require 'models/cashed_device'
+require 'models/cached_device'
 require 'models/user'
 
 # Require timecop for time-freezing

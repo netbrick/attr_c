@@ -1,9 +1,9 @@
 require 'spec_helper'
 
 describe 'attr_cached' do
-  let(:device) { CashedDevice.create! }
+  let(:device) { CachedDevice.create! }
   let(:user) { User.create! }
-  let(:provider) { CashedDevice.attr_cached_provider }
+  let(:provider) { CachedDevice.attr_cached_provider }
 
   it 'init device with empty cache' do
     expect(device.new_record?).to eq(false)
@@ -53,7 +53,7 @@ describe 'attr_cached' do
     expect(provider.read([device, :attr_cache_store])).to eq(nil)
 
     # Load device
-    d = CashedDevice.find device.id
+    d = CachedDevice.find device.id
     expect(d.lat).to eq(lat)
 
     # Set just one value
@@ -72,7 +72,7 @@ describe 'attr_cached' do
     expect(provider_hash[:last_activity].utc.to_i).to eq(time.utc.to_i)
 
     # Load device again
-    d = CashedDevice.find device.id
+    d = CachedDevice.find device.id
     expect(d.lat).to eq(5.302)
     expect(d.lon).to eq(10.305)
   end
@@ -94,7 +94,7 @@ describe 'attr_cached' do
     last_update = d.updated_at
 
     # Now reload data and set different data!
-    d = CashedDevice.find(d.id)
+    d = CachedDevice.find(d.id)
     d.lat = lat + 1
     d.lon = lon + 1
     d.last_activity = time + 3.seconds
@@ -105,7 +105,7 @@ describe 'attr_cached' do
     expect(d.lon).to eq(lon + 1)
 
     # Compare updated at!
-    d = CashedDevice.find(d.id)
+    d = CachedDevice.find(d.id)
     expect(d.updated_at.utc.to_i).to eq(last_update.utc.to_i)
 
     # Test if DB contains old data!
@@ -165,14 +165,14 @@ describe 'attr_cached' do
     Timecop.freeze(time + 10.minutes)
 
     # Now reload data and set different data!
-    d = CashedDevice.find(d.id)
+    d = CachedDevice.find(d.id)
     d.lat = lat + 1
     d.lon = lon + 1
     d.last_activity = time + 10.minutes
     d.save! # This call will touch the database, because is more than 5.minutes
 
     # Compare updated at!
-    d = CashedDevice.find(d.id)
+    d = CachedDevice.find(d.id)
     expect(d.updated_at.utc.to_i).to_not eq(last_update.utc.to_i)
     expect(d.updated_at.utc.to_i).to     eq((time + 10.minutes).utc.to_i)
 
@@ -198,7 +198,7 @@ describe 'attr_cached' do
     Timecop.freeze(time + 10.minutes)
 
     # Now reload data and set different data!
-    d = CashedDevice.find(d.id)
+    d = CachedDevice.find(d.id)
     d.lat = lat + 1
     d.lon = lon + 1
     d.last_activity = time + 3.seconds
@@ -206,7 +206,7 @@ describe 'attr_cached' do
     d.save! # This call will touch the database because some other attributes was set
 
     # Compare updated at!
-    d = CashedDevice.find(d.id)
+    d = CachedDevice.find(d.id)
     expect(d.updated_at.utc.to_i).to_not eq(last_update.utc.to_i)
     expect(d.updated_at.utc.to_i).to     eq((time + 10.minutes).utc.to_i)
 
