@@ -5,6 +5,13 @@ module AttrCached
   # Instance attribute to force-save record!
   attr_accessor :cache_force_save
 
+  # Reset cache to original values!
+  def reset_cache!
+    attr_cached_attributes.each do |attribute|
+      self[attribute] = send("#{attribute}_was")
+    end
+  end
+
   # Arround callback set original values (to dont save object)
   def attr_cached_values_save
     # Save cache store (always)
@@ -14,14 +21,12 @@ module AttrCached
     cached_attributes = {}
 
     # Write into DB?
-    unless write_cache_to_db?
+    unless (@write_cache_to_db = write_cache_to_db?)
       # Clone old attributes
       cached_attributes = attr_cache_store.dup
 
       # Set old attributes
-      attr_cached_attributes.each do |attribute|
-        self[attribute] = send("#{attribute}_was")
-      end
+      reset_cache!
     end
 
     # Yield save (will not save the record if !write_cache_to_db?)
@@ -32,7 +37,7 @@ module AttrCached
 
     # Reassign attributes from cache
     attr_cached_attributes.each do |attribute|
-      self[attribute] = cached_attributes[attribute]
+      send("#{attribute}=", cached_attributes[attribute])
     end
   end
   private :attr_cached_values_save
@@ -137,6 +142,7 @@ class ActiveRecord::Base
 
     # Around save callback (save, not save values)
     around_save :attr_cached_values_save
+    # alias_method_chain :changes_applied, :cache
 
     # Set values to class
     self.attr_cached_attributes = args
@@ -150,6 +156,10 @@ class ActiveRecord::Base
       define_method("#{attribute}=") do |val|
         attr_cache_store[attribute] = val
         super(val)
+      end
+
+      define_method("#{attribute}_cached=") do |val|
+        attr_cache_store[attribute] = val
       end
     end
   end

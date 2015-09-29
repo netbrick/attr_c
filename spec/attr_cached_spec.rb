@@ -4,9 +4,27 @@ describe 'attr_cached' do
   let(:device) { CachedDevice.create! }
   let(:user) { User.create! }
   let(:provider) { CachedDevice.attr_cached_provider }
+  let(:user_provider) { User.attr_cached_provider }
 
   it 'init device with empty cache' do
     expect(device.new_record?).to eq(false)
+  end
+
+  # TODO: This will not work, because of Rails issue
+  # https://github.com/rails/rails/issues/21802
+  it 'dont reset dirty model after not save' do
+    u = user
+    u.last_activity = Time.now
+    u.name = 'name'
+    u.save! # Will touch the DB
+
+    # Set new name
+    u.name = 'set_new_name'
+    u.save!
+
+    # Check old value (ActiveModel::Dirty)
+    expect(u.name_was).to eq('name')
+    expect(u.name).to eq('set_new_name')
   end
 
   it 'user last_activity time always with current time' do
@@ -15,6 +33,28 @@ describe 'attr_cached' do
     u = user
     expect(u.last_activity.utc.to_i).to eq(time.utc.to_i)
     Timecop.return
+  end
+
+  it 'test overriden setter' do
+    desc     = 'description'
+    desc_new = 'new description'
+
+    # Create user and set desc
+    u = user
+    u.desc = desc
+    u.last_activity = Time.now
+    u.save!
+
+    # Change desc and test agains cache!
+    u.desc = desc_new
+    u.last_activity = Time.now.advance(seconds: 3)
+    u.save!
+
+    # Load data from cache
+    cache_data = user_provider.read([u, :attr_cache_store]) || {}
+
+    # Compare with data
+    expect(cache_data[:desc]).to eq(desc_new)
   end
 
   it 'write device data into cache' do

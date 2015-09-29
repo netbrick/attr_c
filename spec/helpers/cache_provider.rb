@@ -11,6 +11,10 @@ class CacheProvider
     @cache[key]
   end
 
+  def cache
+    @cache
+  end
+
   def clear!
     @cache = {}
   end

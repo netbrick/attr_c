@@ -16,6 +16,7 @@ ActiveRecord::Schema.define do
     t.datetime :last_activity
     t.string :name
     t.string :key
+    t.string :desc
 
     t.timestamps null: false
   end
