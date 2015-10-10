@@ -1,6 +1,10 @@
 source 'https://rubygems.org'
 
-gem 'activerecord', "~> #{ENV['ACTIVERECORD_VERSION'] || '4.2.4'}"
+if ENV['ACTIVERECORD_VERSION'] == 'master'
+  gem 'activerecord', github: 'rails/rails'
+else
+  gem 'activerecord', "~> #{ENV['ACTIVERECORD_VERSION'] || '4.2.4'}"
+end
 
 group :development, :test do
   gem 'sqlite3', platforms: [:ruby]
