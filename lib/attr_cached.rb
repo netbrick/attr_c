@@ -42,6 +42,7 @@ module AttrCached
   end
   private :attr_cached_values_save
 
+  # Private method to get attributes from cache!
   def set_attr_cached_values
     # Don't associate from an emtpy cache
     if attr_cache_store.keys.count > 0
@@ -72,7 +73,7 @@ module AttrCached
 
   def attr_cache_store
     @attr_cache_store ||= begin
-      cache_data = attr_cached_provider.read([self, :attr_cache_store]) || {}
+      cache_data = attr_cached_provider.read(attr_cached_key) || {}
 
       if cache_data[attr_cached_by] && self[attr_cached_by] && cache_data[attr_cached_by] >= self[attr_cached_by]
         cache_data
@@ -90,7 +91,7 @@ module AttrCached
   private :set_attr_cached_values
 
   def save_cache_store!
-    attr_cached_provider.write([self, :attr_cache_store], attr_cache_store)
+    attr_cached_provider.write(attr_cached_key, attr_cache_store)
   end
   private :save_cache_store!
 end
@@ -142,7 +143,6 @@ class ActiveRecord::Base
 
     # Around save callback (save, not save values)
     around_save :attr_cached_values_save
-    # alias_method_chain :changes_applied, :cache
 
     # Set values to class
     self.attr_cached_attributes = args
@@ -182,5 +182,16 @@ class ActiveRecord::Base
 
   def attr_cached_expires_in
     self.class.attr_cached_expires_in
+  end
+
+  # Override this method to have more controll
+  # over cache storage (for example access from
+  # other application)
+  #
+  # === Return
+  #
+  # Any serializable object
+  def attr_cached_key
+    [self, :attr_cache_store]
   end
 end

@@ -20,6 +20,28 @@ end
 
 This means that parameters **lat, lon, last_activity** are persisted in Rails.cache. When the Device record is loaded from DB, those parameters are loaded from cache (if last_activity in DB is lower than last_activity in cache)... If you call *save* on user record and only *lat, lon and last_activity* parameters were changed, the record will be stored in DB only if last_activity stored in DB are older than 5 minutes!
 
+### Known issues with older ActiveRecords
+
+There is a problem in dirty checking currently open in Rails!
+https://github.com/rails/rails/issues/21442
+Please see the failing tests to avoid current issue. We hope it will be
+fixed in new version of rails.
+
+### Cache control
+
+If you want to store your model data in other specified cache, you can
+override **attr_cached_key** method in your model.
+
+```ruby
+class Device
+  attr_cached :lat, :lon
+
+  def attr_cached_key
+    "device_#{id}"
+  end
+end
+```
+
 ### Behaviour
 
 ```cmd

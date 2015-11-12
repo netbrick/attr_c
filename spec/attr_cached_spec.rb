@@ -10,6 +10,25 @@ describe 'attr_cached' do
     expect(device.new_record?).to eq(false)
   end
 
+  context 'test key specification' do
+    it 'default key' do
+      u = User.create!
+      u.desc = "Abcd"
+      u.last_activity = Time.now.advance(hours: 2)
+      expect(user_provider).to receive(:write).with([u, :attr_cache_store], any_args)
+      u.save!
+    end
+
+    it 'own key' do
+      d = CachedDevice.create!
+      d.lat = 20.3030
+      d.lon = 21.3030
+      d.last_activity = Time.now.advance(hours: 2)
+      expect(provider).to receive(:write).with("device_#{d.id}", any_args)
+      d.save!
+    end
+  end
+
   # TODO: This will not work, because of Rails issue
   # https://github.com/rails/rails/issues/21802
   it 'dont reset dirty model after not save' do
@@ -70,7 +89,7 @@ describe 'attr_cached' do
     device.save!
 
     # Load data from cache
-    cache_data = provider.read([device, :attr_cache_store])
+    cache_data = provider.read(device.attr_cached_key)
 
     # Compare with data
     expect(cache_data).to match({ lat: lat, lon: lon, last_activity: time })
@@ -90,7 +109,7 @@ describe 'attr_cached' do
 
     # Clear cache
     provider.clear!
-    expect(provider.read([device, :attr_cache_store])).to eq(nil)
+    expect(provider.read(device.attr_cached_key)).to eq(nil)
 
     # Load device
     d = CachedDevice.find device.id
@@ -106,7 +125,7 @@ describe 'attr_cached' do
     expect(d.last_activity.utc.to_i).to eq(time.utc.to_i)
 
     # Compare cash hash data
-    provider_hash = provider.read([device, :attr_cache_store])
+    provider_hash = provider.read(device.attr_cached_key)
     expect(provider_hash[:lat]).to eq(5.302)
     expect(provider_hash[:lon]).to eq(10.305)
     expect(provider_hash[:last_activity].utc.to_i).to eq(time.utc.to_i)
