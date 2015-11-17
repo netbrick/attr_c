@@ -128,7 +128,7 @@ class ActiveRecord::Base
     args = (args << opts[:by]).compact.uniq.map(&:to_sym)
 
     # Set default expires_in
-    opts[:expires_in] = 5.minutes
+    opts[:expires_in] ||= 5.minutes
 
     # Include class methods
     include AttrCached
