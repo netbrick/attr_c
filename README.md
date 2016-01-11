@@ -24,7 +24,7 @@ This means that parameters **lat, lon, last_activity** are persisted in Rails.ca
 
 There is a problem in dirty checking currently open in Rails!
 https://github.com/rails/rails/issues/21442
-Please see the failing tests to avoid current issue. We hope it will be
+Please see the *dont reset dirty model after not save* test to avoid current issue. We hope it will be
 fixed in new version of rails.
 
 ### Cache control

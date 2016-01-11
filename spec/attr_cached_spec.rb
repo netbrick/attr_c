@@ -42,8 +42,8 @@ describe 'attr_cached' do
     u.save!
 
     # Check old value (ActiveModel::Dirty)
-    expect(u.name_was).to eq('name')
-    expect(u.name).to eq('set_new_name')
+    expect(u.name_was).to eq('name') if ActiveRecord::VERSION::MAJOR == 5
+    expect(u.name).to eq('set_new_name') if ActiveRecord::VERSION::MAJOR == 5
   end
 
   it 'user last_activity time always with current time' do
