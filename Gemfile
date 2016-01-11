@@ -1,7 +1,7 @@
 source 'https://rubygems.org'
 
 if ENV['ACTIVERECORD_VERSION'] == 'master'
-  gem 'rails', github: 'rails/rails'
+  gem 'rails', github: 'rails/rails', ref: '5465224'
 else
   gem 'activerecord', "~> #{ENV['ACTIVERECORD_VERSION'] || '4.2.4'}"
 end
